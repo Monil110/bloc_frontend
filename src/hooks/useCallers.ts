@@ -12,7 +12,7 @@ export function useCallers() {
         const fetchCallers = async () => {
             try {
                 const res = await api.get('/callers');
-                setCallers(res.data);
+                setCallers(res.data.data || []);
             } catch (err) {
                 console.error('Error fetching callers:', err);
             } finally {

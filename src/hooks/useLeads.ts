@@ -12,7 +12,7 @@ export function useLeads() {
         const fetchLeads = async () => {
             try {
                 const res = await api.get('/leads');
-                setLeads(res.data);
+                setLeads(res.data.data || []);
             } catch (err) {
                 console.error('Error fetching leads:', err);
             } finally {

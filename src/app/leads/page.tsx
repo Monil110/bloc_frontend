@@ -1,196 +1,152 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useLeads } from '@/hooks/useLeads';
-import { useCallers } from '@/hooks/useCallers';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Search, Filter, UserPlus } from "lucide-react";
+import { useLeads } from "@/hooks/useLeads";
+import { useCallers } from "@/hooks/useCallers";
+import { Lead, Caller } from "@/lib/mockData";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
-    Search,
-    Filter,
-    UserPlus,
-    MapPin,
-    Calendar,
-    Phone,
-    MoreVertical,
-    ChevronDown
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { ManualAssignModal } from '@/components/ui/ManualAssignModal';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+const statusColors: Record<string, string> = {
+    new: "bg-primary/20 text-primary",
+    assigned: "bg-warning/20 text-warning",
+    contacted: "bg-secondary text-secondary-foreground",
+    qualified: "bg-primary/30 text-primary",
+    closed: "bg-success/20 text-success",
+    lost: "bg-destructive/20 text-destructive",
+};
 
 export default function LeadsPage() {
     const { leads, loading: leadsLoading } = useLeads();
-    const { callers } = useCallers();
-    const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [selectedLead, setSelectedLead] = useState<any>(null);
-    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const { callers, loading: callersLoading } = useCallers();
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<string>("all");
 
-    const filteredLeads = leads.filter(lead => {
-        const matchesSearch =
+    const filtered = leads.filter((lead: any) => {
+        const matchSearch =
             lead.name.toLowerCase().includes(search.toLowerCase()) ||
-            lead.phone.includes(search);
-        const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
-        return matchesSearch && matchesStatus;
+            lead.phone.includes(search) ||
+            lead.status.includes(search.toLowerCase());
+        const matchStatus = statusFilter === "all" || lead.status === statusFilter;
+        return matchSearch && matchStatus;
     });
 
-    const handleManualAssign = (lead: any) => {
-        setSelectedLead(lead);
-        setIsAssignModalOpen(true);
-    };
+    if (leadsLoading || callersLoading) {
+        return (
+            <div className="p-8 flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-3xl font-bold">Manage Leads</h2>
-                    <p className="text-muted-foreground mt-1">View and track all incoming leads in real-time.</p>
-                </div>
-            </div>
+        <div className="p-8 space-y-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <h1 className="text-2xl font-bold text-foreground">Leads</h1>
+                <p className="text-muted-foreground text-sm mt-1">Manage and assign incoming leads</p>
+            </motion.div>
 
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 flex items-center space-x-4 bg-accent/30 px-4 py-2 rounded-xl border border-border">
-                    <Search className="w-5 h-5 text-muted-foreground" />
-                    <input
-                        type="text"
-                        placeholder="Search by name or phone..."
+            <div className="flex items-center gap-4">
+                <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search leads..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="bg-transparent border-none outline-none py-1 text-sm w-full"
+                        className="pl-10 bg-muted/30 border-border"
                     />
                 </div>
-
-                <div className="flex items-center space-x-4">
-                    <div className="relative">
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="appearance-none bg-accent/30 border border-border rounded-xl px-4 py-2.5 pr-10 text-sm outline-none cursor-pointer focus:ring-2 focus:ring-primary transition-all"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="new">New</option>
-                            <option value="assigned">Assigned</option>
-                            <option value="pending">Pending</option>
-                            <option value="contacted">Contacted</option>
-                            <option value="closed">Closed</option>
-                        </select>
-                        <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                    </div>
-                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40 bg-muted/30 border-border">
+                        <Filter className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="new">New</SelectItem>
+                        <SelectItem value="assigned">Assigned</SelectItem>
+                        <SelectItem value="contacted">Contacted</SelectItem>
+                        <SelectItem value="qualified">Qualified</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
+                        <SelectItem value="lost">Lost</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
-            <div className="glass rounded-2xl overflow-hidden border border-border/50">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass rounded-xl overflow-hidden"
+            >
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full">
                         <thead>
-                            <tr className="bg-accent/50 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                                <th className="px-6 py-4">Lead Info</th>
-                                <th className="px-6 py-4">State</th>
-                                <th className="px-6 py-4">Source</th>
-                                <th className="px-6 py-4">Assigned To</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4">Date</th>
-                                <th className="px-6 py-4 text-center">Actions</th>
+                            <tr className="border-b border-border">
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lead</th>
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">State</th>
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assigned To</th>
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Value</th>
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-border/30">
-                            {leadsLoading ? (
+                        <tbody>
+                            {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-20 text-center text-muted-foreground">
-                                        Fetching records...
-                                    </td>
-                                </tr>
-                            ) : filteredLeads.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="px-6 py-20 text-center text-muted-foreground">
-                                        No leads found.
+                                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                                        No leads found
                                     </td>
                                 </tr>
                             ) : (
-                                filteredLeads.map((lead, idx) => (
-                                    <motion.tr
-                                        key={lead.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.02 }}
-                                        className="hover:bg-accent/20 transition-colors group"
-                                    >
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                                                    {lead.name[0]}
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-sm">{lead.name}</p>
-                                                    <div className="flex items-center text-xs text-muted-foreground space-x-2">
-                                                        <Phone className="w-3 h-3" />
-                                                        <span>{lead.phone}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center text-sm">
-                                                <MapPin className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
-                                                {lead.state || 'N/A'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-muted-foreground">
-                                            {lead.leadSource || 'Meta Ads'}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {lead.assignedCaller ? (
-                                                <div className="flex items-center space-x-2">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                    <span className="text-sm font-medium">{lead.assignedCaller.name}</span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-xs italic text-muted-foreground">Unassigned</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={cn(
-                                                "text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider",
-                                                lead.status === 'new' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
-                                                    lead.status === 'pending' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
-                                                        'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                                            )}>
-                                                {lead.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col text-[10px]">
-                                                <span className="text-foreground font-medium">
-                                                    {new Date(lead.createdAt).toLocaleDateString()}
-                                                </span>
-                                                <span className="text-muted-foreground">
-                                                    {new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <button
-                                                onClick={() => handleManualAssign(lead)}
-                                                className="p-2 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-all"
-                                                title="Manual Assign"
-                                            >
-                                                <UserPlus className="w-5 h-5" />
-                                            </button>
-                                        </td>
-                                    </motion.tr>
-                                ))
+                                filtered.map((lead: Lead, i: number) => {
+                                    const caller = callers.find((c: Caller) => c.id === lead.assignedTo || c.id === lead.callerId);
+                                    return (
+                                        <motion.tr
+                                            key={lead.id}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: i * 0.04 }}
+                                            className="border-b border-border/50 hover:bg-muted/20 transition-colors"
+                                        >
+                                            <td className="p-4">
+                                                <p className="text-sm font-medium text-foreground">{lead.name}</p>
+                                                <p className="text-xs text-muted-foreground">{lead.phone}</p>
+                                            </td>
+                                            <td className="p-4 text-sm text-muted-foreground">{lead.state}</td>
+                                            <td className="p-4">
+                                                <Badge variant="secondary" className={`${statusColors[lead.status] || "bg-muted text-muted-foreground"} border-0 text-xs capitalize`}>
+                                                    {lead.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="p-4 text-sm text-muted-foreground">{caller?.name || "—"}</td>
+                                            <td className="p-4 text-sm font-medium text-foreground">
+                                                {lead.value > 0 ? `₹${(lead.value / 1000).toFixed(0)}K` : "—"}
+                                            </td>
+                                            <td className="p-4">
+                                                {(!lead.assignedTo && !lead.callerId) && (
+                                                    <button className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors">
+                                                        <UserPlus className="w-3.5 h-3.5" />
+                                                        Assign
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </motion.tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-            <ManualAssignModal
-                isOpen={isAssignModalOpen}
-                onClose={() => setIsAssignModalOpen(false)}
-                onSuccess={() => {/* Hook handles real-time update */ }}
-                lead={selectedLead}
-                callers={callers}
-            />
+            </motion.div>
         </div>
     );
 }

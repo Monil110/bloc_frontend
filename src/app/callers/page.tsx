@@ -1,151 +1,161 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useCallers } from '@/hooks/useCallers';
-import { Plus, Edit2, Trash2, Shield, Languages, MapPin, Search } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { CallerModal } from '@/components/ui/CallerModal';
-import api from '@/lib/api';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Phone, MapPin, Globe, BarChart3, Plus } from "lucide-react";
+import { useCallers } from "@/hooks/useCallers";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { CallerModal } from "@/components/ui/CallerModal";
+import { Caller } from "@/lib/mockData";
+
+const statusStyle: Record<string, string> = {
+    active: "bg-success/20 text-success",
+    busy: "bg-warning/20 text-warning",
+    offline: "bg-muted text-muted-foreground",
+};
 
 export default function CallersPage() {
-    const { callers, loading, setCallers } = useCallers();
+    const { callers, loading } = useCallers();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedCaller, setSelectedCaller] = useState<any>(null);
-    const [search, setSearch] = useState('');
+    const [selectedCaller, setSelectedCaller] = useState<Caller | undefined>(undefined);
 
-    const handleEdit = (caller: any) => {
+    const handleAddCaller = () => {
+        setSelectedCaller(undefined);
+        setIsModalOpen(true);
+    };
+
+    const handleEditCaller = (caller: Caller) => {
         setSelectedCaller(caller);
         setIsModalOpen(true);
     };
 
-    const handleAdd = () => {
-        setSelectedCaller(null);
-        setIsModalOpen(true);
+    const handleSuccess = () => {
+        setIsModalOpen(false);
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to deactivate this caller?')) {
-            try {
-                await api.delete(`/callers/${id}`);
-                setCallers(prev => prev.map(c => c.id === id ? { ...c, isActive: false } : c));
-            } catch (err) {
-                console.error('Error deleting caller:', err);
-            }
-        }
-    };
+    if (loading) {
+        return (
+            <div className="p-8 flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+            </div>
+        );
+    }
 
-    const filteredCallers = callers.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.role.toLowerCase().includes(search.toLowerCase())
-    );
+    if (!loading && callers.length === 0) {
+        return (
+            <div className="p-8 space-y-6">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-foreground">Callers</h1>
+                        <p className="text-muted-foreground text-sm mt-1">Manage your sales team</p>
+                    </div>
+                    <button
+                        onClick={handleAddCaller}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add Caller
+                    </button>
+                </motion.div>
+                <div className="text-center text-muted-foreground py-10">
+                    No callers found. Click "Add Caller" to get started!
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-8 space-y-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold">Sales Callers</h2>
-                    <p className="text-muted-foreground mt-1">Manage your team and their lead assignment rules.</p>
+                    <h1 className="text-2xl font-bold text-foreground">Callers</h1>
+                    <p className="text-muted-foreground text-sm mt-1">Manage your sales team</p>
                 </div>
                 <button
-                    onClick={handleAdd}
-                    className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity whitespace-nowrap"
+                    onClick={handleAddCaller}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
                 >
-                    <Plus className="w-5 h-5" />
-                    <span>Add Caller</span>
+                    <Plus className="w-4 h-4" />
+                    Add Caller
                 </button>
-            </div>
+            </motion.div>
 
-            <div className="flex items-center space-x-4 bg-accent/30 p-2 rounded-xl border border-border max-w-md">
-                <Search className="w-5 h-5 ml-2 text-muted-foreground" />
-                <input
-                    type="text"
-                    placeholder="Filter callers..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="bg-transparent border-none outline-none py-2 text-sm w-full"
-                />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {callers.map((caller: any, i: number) => {
+                    const dailyLimit = caller.dailyLimit || caller.dailyLeadLimit || 60;
+                    const leadsToday = caller.leadsToday || 0;
+                    const capacityPct = Math.min(100, Math.round((leadsToday / dailyLimit) * 100));
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {loading ? (
-                    <p className="col-span-full text-center py-20 text-muted-foreground">Loading callers data...</p>
-                ) : filteredCallers.length === 0 ? (
-                    <div className="col-span-full text-center py-20 glass rounded-2xl">
-                        <p className="text-muted-foreground">No callers found matching your search.</p>
-                    </div>
-                ) : (
-                    filteredCallers.map((caller, index) => (
+                    return (
                         <motion.div
                             key={caller.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.05 }}
-                            className={cn(
-                                "glass rounded-2xl p-6 relative group transition-all duration-300",
-                                !caller.isActive && "opacity-60 grayscale"
-                            )}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            onClick={() => handleEditCaller(caller)}
+                            className="glass glass-hover rounded-xl p-6 glow-primary cursor-pointer"
                         >
-                            <div className="flex items-start justify-between mb-6">
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary font-bold text-xl">
-                                        {caller.name[0]}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-lg">{caller.name}</h3>
-                                        <p className="text-sm text-muted-foreground">{caller.role}</p>
-                                    </div>
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-sm font-bold text-primary">
+                                    {caller.avatar || (caller.name ? caller.name[0] : "?")}
                                 </div>
-                                <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => handleEdit(caller)}
-                                        className="p-2 hover:bg-accent rounded-lg text-primary transition-colors"
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(caller.id)}
-                                        className="p-2 hover:bg-destructive/10 rounded-lg text-destructive transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-base font-semibold text-foreground truncate">{caller.name}</h3>
+                                        <Badge variant="secondary" className={`${statusStyle[caller.status] || "bg-muted text-muted-foreground"} border-0 text-xs capitalize`}>
+                                            {caller.status}
+                                        </Badge>
+                                    </div>
+
+                                    <div className="mt-4 space-y-3">
+                                        <div>
+                                            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                                                <span>Daily Capacity</span>
+                                                <span>{leadsToday}/{dailyLimit}</span>
+                                            </div>
+                                            <Progress value={capacityPct} className="h-1.5" />
+                                        </div>
+
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                            <span className="flex items-center gap-1">
+                                                <BarChart3 className="w-3.5 h-3.5" />
+                                                {caller.closedDeals || 0} deals
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <MapPin className="w-3.5 h-3.5" />
+                                                {(caller.states || caller.assignedStates)?.length || 0} states
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Globe className="w-3.5 h-3.5" />
+                                                {caller.languages?.length || 0} langs
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {(caller.states || caller.assignedStates || []).slice(0, 3).map((state: string) => (
+                                                <span key={state} className="px-2 py-0.5 rounded text-[10px] bg-muted/50 text-muted-foreground">
+                                                    {state}
+                                                </span>
+                                            ))}
+                                            {(caller.states || caller.assignedStates || []).length > 3 && (
+                                                <span className="px-2 py-0.5 rounded text-[10px] bg-muted/50 text-muted-foreground">
+                                                    +{(caller.states || caller.assignedStates).length - 3} more
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div className="space-y-4">
-                                <div className="flex items-center text-sm text-muted-foreground">
-                                    <Shield className="w-4 h-4 mr-2 text-blue-500" />
-                                    <span className="flex-1">Lead Limit:</span>
-                                    <span className="text-foreground font-medium">{caller.dailyLeadLimit} / day</span>
-                                </div>
-                                <div className="flex items-center text-sm text-muted-foreground">
-                                    <Languages className="w-4 h-4 mr-2 text-emerald-500" />
-                                    <span className="flex-1">Languages:</span>
-                                    <span className="text-foreground font-medium">{caller.languages?.join(', ') || 'None'}</span>
-                                </div>
-                                <div className="flex items-start text-sm text-muted-foreground">
-                                    <MapPin className="w-4 h-4 mr-2 mt-0.5 text-amber-500" />
-                                    <span className="flex-1">Assigned States:</span>
-                                    <span className="text-foreground font-medium text-right max-w-[150px]">
-                                        {caller.assignedStates?.join(', ') || 'Global'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {!caller.isActive && (
-                                <div className="absolute top-4 right-4 bg-destructive/20 text-destructive text-[10px] font-bold px-2 py-1 rounded">
-                                    INACTIVE
-                                </div>
-                            )}
                         </motion.div>
-                    ))
-                )}
+                    );
+                })}
             </div>
 
             <CallerModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSuccess={() => {/* Hook handles updates via Socket */ }}
+                onSuccess={handleSuccess}
                 caller={selectedCaller}
             />
         </div>

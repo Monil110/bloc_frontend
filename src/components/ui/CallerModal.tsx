@@ -4,13 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Caller } from '@/lib/mockData';
 import api from '@/lib/api';
 
 interface CallerModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    caller?: any;
+    caller?: Caller;
 }
 
 export function CallerModal({ isOpen, onClose, onSuccess, caller }: CallerModalProps) {
@@ -29,8 +30,8 @@ export function CallerModal({ isOpen, onClose, onSuccess, caller }: CallerModalP
                 name: caller.name || '',
                 role: caller.role || '',
                 languages: caller.languages?.join(', ') || '',
-                dailyLeadLimit: caller.dailyLeadLimit || 60,
-                assignedStates: caller.assignedStates?.join(', ') || '',
+                dailyLeadLimit: caller.dailyLeadLimit || caller.dailyLimit || 60,
+                assignedStates: (caller.assignedStates || caller.states || []).join(', ') || '',
             });
         } else {
             setFormData({
