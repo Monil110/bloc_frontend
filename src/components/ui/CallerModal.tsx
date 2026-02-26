@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Caller } from '@/lib/mockData';
+import { Caller } from "@/types";
 import api from '@/lib/api';
 
 interface CallerModalProps {

@@ -1,12 +1,15 @@
 # Bloc Sales CRM Frontend
 
-A premium, real-time Sales CRM dashboard built with Next.js, Tailwind CSS v4, and Socket.io. This application provides a high-performance interface for lead ingestion, sales team management, and automated lead assignment.
+A premium, real-time Sales CRM dashboard built with Next.js, Tailwind CSS v4, and Socket.io. This application provides a high-performance interface for lead ingestion, sales team management, and automated lead assignment with manual overrides.
 
 ## Features
 
 - **Real-Time Dashboard**: Live stats and activity feed powered by WebSockets.
-- **Lead Management**: Filterable list of leads with state-based sorting.
-- **Caller Management**: Track sales caller performance, capacity, and assigned states.
+- **Pure API Architecture**: No dummy data; all leads and callers are fetched from your PostgreSQL database (integrated via Google Sheets & n8n).
+- **Dual Assignment System**:
+  - **Automated**: Backend automatically assigns leads on ingestion based on state and caller capacity.
+  - **Manual Override**: Managers can manually assign or reassign any lead directly from the UI.
+- **Enhanced Lead Tracking**: Detailed leads table with Source, City, State, and real-time status updates.
 - **Glassmorphism Design**: Sleek, modern dark-themed UI with subtle animations and glows.
 
 ## Getting Started
@@ -32,32 +35,31 @@ A premium, real-time Sales CRM dashboard built with Next.js, Tailwind CSS v4, an
 
 ### `src/app` (Next.js App Router)
 - `page.tsx`: The Dashboard. Displays real-time metrics (Total Leads, Revenue, Active Callers) and a live activity feed.
-- `leads/page.tsx`: Leads Page. A comprehensive table for searching, filtering, and assigning leads.
+- `leads/page.tsx`: Leads Page. Comprehensive table for tracking leads with Source, City, and Manual Reassignment capabilities.
 - `callers/page.tsx`: Callers Page. Manages the sales team with status indicators and daily capacity tracking.
-- `layout.tsx`: The root layout that wraps all pages with the AppSidebar.
-- `globals.css`: Contains the Tailwind v4 @theme configuration and custom glassmorphism utilities (`.glass`, `.glow-primary`).
 
 ### `src/components` (UI System)
-- `dashboard/StatsCard.tsx`: Reusable card for displaying key performance indicators with trends and icons.
-- `layout/AppSidebar.tsx`: The primary navigation bar with route-aware active states.
-- `layout/AppLayout.tsx`: Orchestrates the main layout structure (Sidebar + Scrollable Content).
-- `ui/`: Modular, low-level components like Badge, Input, Progress, Select, and the CallerModal.
+- `dashboard/StatsCard.tsx`: Reusable card for displaying KPIs with trends and icons.
+- `ui/ManualAssignModal.tsx`: Interface for manually overriding lead assignments.
+- `ui/CallerModal.tsx`: Form for adding or editing sales caller details.
 
 ### `src/hooks` (Data & Logic)
-- `useLeads.ts`: Custom hook for fetching leads and subscribing to real-time `lead:new` events.
-- `useCallers.ts`: Manages caller data and real-time status updates via WebSockets.
-- `useLiveFeed.ts`: Custom logic that derives a human-readable activity feed from incoming lead and caller updates.
+- `useLeads.ts`: Custom hook for fetching real-time lead data and handling WebSocket updates.
+- `useCallers.ts`: Manages live caller statuses and capacity tracking.
+- `useLiveFeed.ts`: Derives a human-readable activity feed from incoming system events.
+
+### `src/types` (Type System)
+- `index.ts`: Centralized TypeScript interfaces for `Lead` and `Caller`, replacing legacy mock data structures.
 
 ### `src/lib` (Utilities & Config)
-- `api.ts`: Centralized Axios instance for HTTP requests to the backend.
-- `socket.ts`: Socket.io client configuration for real-time bidirectional communication.
-- `mockData.ts`: Defines core TypeScript interfaces (Lead, Caller) and provides fallback mock data for development.
-- `utils.ts`: Helper functions like `cn` for conditional Tailwind class merging.
+- `api.ts`: Axios instance for secure API communication.
+- `socket.ts`: Socket.io client for real-time synchronization.
 
 ## Tech Stack
 
 - **Next.js 15**: App Router architecture.
 - **Tailwind CSS v4**: Advanced CSS-first styling.
 - **Framer Motion**: Smooth interface transitions and micro-interactions.
-- **Lucide React**: Premium icon set.
-- **Socket.io Client**: Real-time synchronization.
+- **Socket.io Client**: Real-time synchronization with the Sales CRM backend.
+- **Axios**: Promised-based HTTP client for API requests.
+

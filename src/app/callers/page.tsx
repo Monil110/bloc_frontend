@@ -7,7 +7,7 @@ import { useCallers } from "@/hooks/useCallers";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CallerModal } from "@/components/ui/CallerModal";
-import { Caller } from "@/lib/mockData";
+import { Caller } from "@/types";
 
 const statusStyle: Record<string, string> = {
     active: "bg-success/20 text-success",

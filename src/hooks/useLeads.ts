@@ -3,17 +3,19 @@
 import { useEffect, useState } from 'react';
 import { socket } from '@/lib/socket';
 import api from '@/lib/api';
+import { Lead } from '@/types';
 
 export function useLeads() {
-    const [leads, setLeads] = useState<any[]>([]);
+    const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchLeads = async () => {
             try {
                 const res = await api.get('/leads');
-                setLeads(res.data.data || []);
+                setLeads(res.data.data || res.data || []);
             } catch (err) {
+
                 console.error('Error fetching leads:', err);
             } finally {
                 setLoading(false);
@@ -22,8 +24,8 @@ export function useLeads() {
 
         fetchLeads();
 
-        socket.on('lead:new', (data) => {
-            setLeads((prev) => [data.lead, ...prev]);
+        socket.on('lead:new', (lead) => {
+            setLeads((prev) => [lead, ...prev]);
         });
 
         socket.on('lead:updated', (updatedLead) => {

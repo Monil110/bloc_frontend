@@ -3,17 +3,19 @@
 import { useEffect, useState } from 'react';
 import { socket } from '@/lib/socket';
 import api from '@/lib/api';
+import { Caller } from '@/types';
 
 export function useCallers() {
-    const [callers, setCallers] = useState<any[]>([]);
+    const [callers, setCallers] = useState<Caller[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchCallers = async () => {
             try {
                 const res = await api.get('/callers');
-                setCallers(res.data.data || []);
+                setCallers(res.data.data || res.data || []);
             } catch (err) {
+
                 console.error('Error fetching callers:', err);
             } finally {
                 setLoading(false);

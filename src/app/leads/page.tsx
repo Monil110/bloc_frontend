@@ -5,7 +5,9 @@ import { motion } from "framer-motion";
 import { Search, Filter, UserPlus } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
 import { useCallers } from "@/hooks/useCallers";
-import { Lead, Caller } from "@/lib/mockData";
+import { ManualAssignModal } from "@/components/ui/ManualAssignModal";
+
+import { Lead } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,11 +20,10 @@ import {
 
 const statusColors: Record<string, string> = {
     new: "bg-primary/20 text-primary",
-    assigned: "bg-warning/20 text-warning",
     contacted: "bg-secondary text-secondary-foreground",
-    qualified: "bg-primary/30 text-primary",
     closed: "bg-success/20 text-success",
-    lost: "bg-destructive/20 text-destructive",
+    unassigned: "bg-warning/20 text-warning",
+    pending: "bg-destructive/20 text-destructive",
 };
 
 export default function LeadsPage() {
@@ -30,6 +31,19 @@ export default function LeadsPage() {
     const { callers, loading: callersLoading } = useCallers();
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+
+    const handleOpenAssign = (lead: Lead) => {
+        setSelectedLead(lead);
+        setIsAssignModalOpen(true);
+    };
+
+    const handleAssignSuccess = () => {
+        setIsAssignModalOpen(false);
+        setSelectedLead(null);
+    };
+
 
     const filtered = leads.filter((lead: any) => {
         const matchSearch =
@@ -73,11 +87,10 @@ export default function LeadsPage() {
                     <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="new">New</SelectItem>
-                        <SelectItem value="assigned">Assigned</SelectItem>
                         <SelectItem value="contacted">Contacted</SelectItem>
-                        <SelectItem value="qualified">Qualified</SelectItem>
                         <SelectItem value="closed">Closed</SelectItem>
-                        <SelectItem value="lost">Lost</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -93,9 +106,11 @@ export default function LeadsPage() {
                             <tr className="border-b border-border">
                                 <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lead</th>
                                 <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">State</th>
-                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">City</th>
                                 <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assigned To</th>
-                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Value</th>
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Created</th>
                                 <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Action</th>
                             </tr>
                         </thead>
@@ -108,7 +123,6 @@ export default function LeadsPage() {
                                 </tr>
                             ) : (
                                 filtered.map((lead: Lead, i: number) => {
-                                    const caller = callers.find((c: Caller) => c.id === lead.assignedTo || c.id === lead.callerId);
                                     return (
                                         <motion.tr
                                             key={lead.id}
@@ -122,22 +136,25 @@ export default function LeadsPage() {
                                                 <p className="text-xs text-muted-foreground">{lead.phone}</p>
                                             </td>
                                             <td className="p-4 text-sm text-muted-foreground">{lead.state}</td>
+                                            <td className="p-4 text-sm text-muted-foreground">{lead.leadSource || "—"}</td>
+                                            <td className="p-4 text-sm text-muted-foreground">{lead.city || "—"}</td>
+                                            <td className="p-4 text-sm text-muted-foreground">{lead.assignedCaller?.name || "—"}</td>
                                             <td className="p-4">
                                                 <Badge variant="secondary" className={`${statusColors[lead.status] || "bg-muted text-muted-foreground"} border-0 text-xs capitalize`}>
                                                     {lead.status}
                                                 </Badge>
                                             </td>
-                                            <td className="p-4 text-sm text-muted-foreground">{caller?.name || "—"}</td>
-                                            <td className="p-4 text-sm font-medium text-foreground">
-                                                {lead.value > 0 ? `₹${(lead.value / 1000).toFixed(0)}K` : "—"}
+                                            <td className="p-4 text-sm text-muted-foreground">
+                                                {new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </td>
                                             <td className="p-4">
-                                                {(!lead.assignedTo && !lead.callerId) && (
-                                                    <button className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors">
-                                                        <UserPlus className="w-3.5 h-3.5" />
-                                                        Assign
-                                                    </button>
-                                                )}
+                                                <button
+                                                    onClick={() => handleOpenAssign(lead)}
+                                                    className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors"
+                                                >
+                                                    <UserPlus className="w-3.5 h-3.5" />
+                                                    {lead.assignedCallerId ? "Reassign" : "Assign"}
+                                                </button>
                                             </td>
                                         </motion.tr>
                                     );
@@ -147,6 +164,14 @@ export default function LeadsPage() {
                     </table>
                 </div>
             </motion.div>
+
+            <ManualAssignModal
+                isOpen={isAssignModalOpen}
+                onClose={() => setIsAssignModalOpen(false)}
+                onSuccess={handleAssignSuccess}
+                lead={selectedLead}
+                callers={callers}
+            />
         </div>
     );
 }

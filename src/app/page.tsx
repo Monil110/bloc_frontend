@@ -6,7 +6,7 @@ import StatsCard from "@/components/dashboard/StatsCard";
 import { useLeads } from "@/hooks/useLeads";
 import { useCallers } from "@/hooks/useCallers";
 import { useLiveFeed, FeedItem } from "@/hooks/useLiveFeed";
-import { Lead, Caller } from "@/lib/mockData";
+import { Lead, Caller } from "@/types";
 
 export default function Dashboard() {
   const { leads, loading: leadsLoading } = useLeads();

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { socket } from '@/lib/socket';
-import { Lead, Caller } from '@/lib/mockData';
+import { Lead, Caller } from '@/types';
+
 
 export interface FeedItem {
     id: string;
@@ -46,10 +47,10 @@ export function useLiveFeed(initialLeads: Lead[], callers: Caller[]) {
     }, [initialLeads.length, callers.length]);
 
     useEffect(() => {
-        const handleNewLead = (data: { lead: Lead }) => {
+        const handleNewLead = (lead: Lead) => {
             const newItem: FeedItem = {
-                id: `new-${data.lead.id}-${Date.now()}`,
-                message: `New lead from ${data.lead.state || 'Unknown'} — ${data.lead.name}`,
+                id: `new-${lead.id}-${Date.now()}`,
+                message: `New lead from ${lead.state || 'Unknown'} — ${lead.name}`,
                 time: "Just now",
                 type: 'new'
             };
