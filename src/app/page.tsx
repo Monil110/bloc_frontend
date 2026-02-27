@@ -15,7 +15,7 @@ export default function Dashboard() {
 
   const totalLeads = leads.length;
   const newLeads = leads.filter((l: Lead) => l.status === "new").length;
-  const pending = leads.filter((l: Lead) => l.status === "assigned").length;
+  const pending = leads.filter((l: Lead) => l.status === "pending").length;
   const closedLeads = leads.filter((l: Lead) => l.status === "closed");
   const closed = closedLeads.length;
   const totalRevenue = closedLeads.reduce((acc: number, curr: Lead) => acc + (curr.value || 0), 0);
@@ -97,7 +97,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{caller.name}</p>
-                  <p className="text-xs text-muted-foreground">{(caller.leadsToday || 0)}/{(caller.dailyLimit || caller.dailyLeadLimit || 0)} leads</p>
+                  <p className="text-xs text-muted-foreground">{(caller.todayLeadCount || 0)}/{(caller.dailyLeadLimit || 0)} leads</p>
                 </div>
                 <div className={`w-2 h-2 rounded-full ${caller.status === "active" ? "bg-success" : caller.status === "busy" ? "bg-warning" : "bg-muted-foreground"
                   }`} />

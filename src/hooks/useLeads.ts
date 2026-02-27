@@ -34,9 +34,14 @@ export function useLeads() {
             );
         });
 
+        socket.on('lead:unassigned', (lead) => {
+            setLeads((prev) => [lead, ...prev]);
+        });
+
         return () => {
             socket.off('lead:new');
             socket.off('lead:updated');
+            socket.off('lead:unassigned');
         };
     }, []);
 

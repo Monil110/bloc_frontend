@@ -30,7 +30,7 @@ export function CallerModal({ isOpen, onClose, onSuccess, caller }: CallerModalP
                 name: caller.name || '',
                 role: caller.role || '',
                 languages: caller.languages?.join(', ') || '',
-                dailyLeadLimit: caller.dailyLeadLimit || caller.dailyLimit || 60,
+                dailyLeadLimit: caller.dailyLeadLimit || 60,
                 assignedStates: (caller.assignedStates || caller.states || []).join(', ') || '',
             });
         } else {

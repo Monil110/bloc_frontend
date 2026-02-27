@@ -27,12 +27,15 @@ export function useLiveFeed(initialLeads: Lead[], callers: Caller[]) {
                 if (lead.status === 'closed') {
                     message = `Deal closed ${caller ? `by ${caller.name}` : ''} — ${lead.name}`;
                     type = 'closed';
-                } else if (lead.status === 'assigned' || lead.assignedTo) {
+                } else if (lead.assignedCallerId || lead.assignedTo) {
                     message = `Lead assigned ${caller ? `to ${caller.name}` : ''} — ${lead.name}`;
                     type = 'assigned';
                 } else if (lead.status === 'contacted') {
                     message = `Lead contacted — ${lead.name}`;
                     type = 'contacted';
+                } else {
+                    message = `New lead from ${lead.state || 'Unknown'} — ${lead.name}`;
+                    type = 'new';
                 }
 
                 return {
@@ -64,13 +67,16 @@ export function useLiveFeed(initialLeads: Lead[], callers: Caller[]) {
             if (lead.status === 'closed') {
                 message = `Deal closed — ${lead.name}`;
                 type = 'closed';
-            } else if (lead.status === 'assigned' || lead.assignedTo) {
-                const caller = callers.find(c => c.id === lead.assignedTo || c.id === lead.callerId);
+            } else if (lead.assignedCallerId || lead.assignedTo) {
+                const caller = callers.find(c => c.id === lead.assignedTo || c.id === lead.callerId || c.id === lead.assignedCallerId);
                 message = `Lead assigned ${caller ? `to ${caller.name}` : ''} — ${lead.name}`;
                 type = 'assigned';
             } else if (lead.status === 'contacted') {
                 message = `Lead contacted — ${lead.name}`;
                 type = 'contacted';
+            } else {
+                message = `New lead from ${lead.state || 'Unknown'} — ${lead.name}`;
+                type = 'new';
             }
 
             if (message) {
@@ -86,10 +92,12 @@ export function useLiveFeed(initialLeads: Lead[], callers: Caller[]) {
 
         socket.on('lead:new', handleNewLead);
         socket.on('lead:updated', handleUpdateLead);
+        socket.on('lead:unassigned', handleNewLead);
 
         return () => {
-            socket.off('lead:new');
-            socket.off('lead:updated');
+            socket.off('lead:new', handleNewLead);
+            socket.off('lead:updated', handleUpdateLead);
+            socket.off('lead:unassigned', handleNewLead);
         };
     }, [callers]);
 
